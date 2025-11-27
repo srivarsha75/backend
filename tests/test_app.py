@@ -4,7 +4,7 @@ from app import app
 
 @pytest.fixture
 def client():
-    app.config['TESTING'] = True
+    app.testing = True
     with app.test_client() as client:
         yield client
 
@@ -18,14 +18,13 @@ def test_get_students(client):
     assert res.status_code == 200
     data = res.get_json()
     assert isinstance(data, list)
-    assert any(isinstance(s.get("id"), int) for s in data)
+    assert any(s["name"] == "Alice" for s in data)
 
 def test_get_single_student(client):
-    # assume first student exists (id 1)
     res = client.get("/students/1")
     assert res.status_code == 200
     student = res.get_json()
-    assert "id" in student and student["id"] == 1
+    assert student["id"] == 1
 
 def test_add_student(client):
     new_student = {"id": 999, "name": "CI Tester", "age": 30}
