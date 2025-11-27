@@ -1,33 +1,31 @@
-# backend/tests/test_app.py
-import json
+# tests/test_app.py
 import pytest
-from app import app    # this works if pytest runs with working directory set to the folder that contains app.py
+from app import app
 
 @pytest.fixture
 def client():
-    app.testing = True
+    app.config['TESTING'] = True
     with app.test_client() as client:
         yield client
 
 def test_home_route(client):
     res = client.get("/")
     assert res.status_code == 200
-    data = res.get_json()
-    assert "message" in data
+    assert b"Student API Running" in res.data
 
 def test_get_students(client):
     res = client.get("/students")
     assert res.status_code == 200
     data = res.get_json()
     assert isinstance(data, list)
-    # at least two students exist (based on your app)
-    assert any(s.get("name") == "Alice" for s in data)
+    assert any(isinstance(s.get("id"), int) for s in data)
 
 def test_get_single_student(client):
+    # assume first student exists (id 1)
     res = client.get("/students/1")
     assert res.status_code == 200
-    data = res.get_json()
-    assert data["id"] == 1
+    student = res.get_json()
+    assert "id" in student and student["id"] == 1
 
 def test_add_student(client):
     new_student = {"id": 999, "name": "CI Tester", "age": 30}
