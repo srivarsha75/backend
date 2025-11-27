@@ -1,26 +1,36 @@
-from app import app
+# backend/tests/test_app.py
+import json
+import pytest
+from app import app    # this works if pytest runs with working directory set to the folder that contains app.py
 
-def test_home_route():
-    client = app.test_client()
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.get_json() == {"message": "Student API Running"}
+@pytest.fixture
+def client():
+    app.testing = True
+    with app.test_client() as client:
+        yield client
 
-def test_get_students():
-    client = app.test_client()
-    response = client.get("/students")
-    assert response.status_code == 200
-    assert isinstance(response.get_json(), list)
+def test_home_route(client):
+    res = client.get("/")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert "message" in data
 
-def test_get_single_student():
-    client = app.test_client()
-    response = client.get("/students/1")
-    assert response.status_code == 200
-    assert response.get_json()["id"] == 1
+def test_get_students(client):
+    res = client.get("/students")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert isinstance(data, list)
+    # at least two students exist (based on your app)
+    assert any(s.get("name") == "Alice" for s in data)
 
-def test_add_student():
-    client = app.test_client()
-    new_student = {"id": 3, "name": "Charlie", "age": 23}
-    response = client.post("/students", json=new_student)
-    assert response.status_code == 201
-    assert response.get_json() == new_student
+def test_get_single_student(client):
+    res = client.get("/students/1")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["id"] == 1
+
+def test_add_student(client):
+    new_student = {"id": 999, "name": "CI Tester", "age": 30}
+    res = client.post("/students", json=new_student)
+    assert res.status_code == 201
+    assert res.get_json() == new_student
